@@ -1,0 +1,1 @@
+# Accelerated-Fuzzy-region-competition
