@@ -33,7 +33,7 @@ end
 %parameters
 lambda = 0.05;   %Fidelity weight
 dx = 1;          %Grid point distance
-tmax = 100;
+tmax = 10;
 N = 2;           %Dimension
 g = 1;           %Regularization weight
 method = 1;
@@ -44,7 +44,7 @@ method = 1;
 
 tic
 
-for k = [1]                  %times of actual damping coefficient to theortical best damping coefficient
+for k = [7]                  %times of actual damping coefficient to theortical best damping coefficient
 for b = [2]                          %beta in beltrami regularization
 for method = [1]
     
@@ -70,7 +70,7 @@ for method = [1]
         if(etime(t2,t1) > ind)
             E(ind + 1) = e;
             ind = ind + 1;
-            surf(u);
+%             surf(u);
 %             imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
 %             contour(u, [0.5 0.5], 'r');hold off
 %             title(sprintf('Contour at Level-Set 0 at Time = %d ,lambda=%d,k=%d,b=%d', floor(etime(t2,t1)),lambda,k,b));
