@@ -35,29 +35,27 @@ end
 px = zeros(m,n); %Initial projector(dual variable) on x direction
 py = zeros(m,n); %Initial projector(dual variable) on y dirextion
 
-
 %parameters
 lambda = 0.05;      %Fidelity weight
 dx = 1;             %Grid point distance
-tmax = 100;      %Maximum iterations
-L2 = 8;
-
+tmax = 1000;      %Maximum iterations
+L2 = 6;
+g = 1;
 
 tic
 for b = [2]          %beta in beltrami regularization
-
+    
     figure
-    sigma = sqrt(1./L2/b); %sigma parameter from the paper
-    tau = sqrt(1./L2/b);
-    E = zeros(tmax,1);  %Initla potential energy function
-
-    u = u0;              %u for level set(primal variable)
-    u_ = u;              %u_ for previous level set
+    a = 2.*sqrt(b.*g.*(pi.^2)/m/n);
+    sigma = sqrt(a./L2/b); %sigma parameter from the paper
+    tau = sqrt(1/L2/a/b);
+    E = zeros(tmax,1);     %Initla potential energy function
+    u = u0;                %u for level set(primal variable)
+    u_ = u;                %u_ for previous level set
     ind = 0;
     t1 = clock;
  
-
-    while (ind < tmax)        
+    while (ind < tmax/10)        
         beta = b;
         utemp = u;
         %beta = getBeta(u,dx,b);   
@@ -71,13 +69,19 @@ for b = [2]          %beta in beltrami regularization
         t2 = clock;
         
         if(etime(t2,t1) > ind)
-            E(ind + 1) = e;
-            ind = ind + 1;
-%             imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
-%             contour(u, [0.5 0.5], 'r');hold off
-%             title(sprintf('Contour at Level-Set 0 at Time = %d ,lambda=%d,b=%d', floor(etime(t2,t1)),lambda,b));
-%             drawnow;
+            E(int32(ind.*10 + 1)) = e;
+            ind = ind + 0.1;
         end
+        
+%        visualize contour
+%         if(mod(int32(ind*10),5) == 0)
+% %             imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
+% %             contour(u, [0.5 0.5], 'r');hold off
+% %             title(sprintf('Primal dual Beltrami'));
+%             imshow(u); hold on
+%             drawnow;
+%         end
+        
         %update dual variable
         Den = real(sqrt(beta.^2 - px.^2 - py.^2));
         Den(Den < 0) = 0;
@@ -96,7 +100,7 @@ for b = [2]          %beta in beltrami regularization
     
     %automatically save the energy
 
-    name = strcat('t_pd_b =',num2str(b),',i=',num2str(itmax),',tau=',num2str(sigma),',theta=',num2str(tau),'.mat');
+    name = strcat('t_pd_b =',num2str(b),',t=',num2str(tmax),',sigma=',num2str(sigma),',tau=',num2str(tau),'.mat');
     save(name,'E');
 end
 toc

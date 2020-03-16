@@ -33,7 +33,7 @@ end
 %parameters
 lambda = 0.05;   %Fidelity weight
 dx = 1;          %Grid point distance
-itmax = 5000;    %Maximum iterations
+itmax = 1000;    %Maximum iterations
 N = 2;           %Dimension
 g = 1;           %Regularization weight
 dumax = 0.001;
@@ -69,15 +69,15 @@ for method = [1]
         u_ = utemp;
         
         %visualize the contour
-        if(mod(num,1) == 0)
-           surf(u);
-           shading interp
-%           imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
-%           contour(u, [0.5 0.5], 'r');hold off
-%           title(sprintf('Contour at Level-Set 0 at Iteration = %d ,lambda=%d,k=%d,b=%d', num,lambda,k,b));
-            drawnow;
-        end
-%         if(mod(num,20) == 0)
+%         if(mod(num,1) == 0)
+%            surf(u);
+%            shading interp
+% %           imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
+% %           contour(u, [0.5 0.5], 'r');hold off
+% %           title(sprintf('Contour at Level-Set 0 at Iteration = %d ,lambda=%d,k=%d,b=%d', num,lambda,k,b));
+%             drawnow;
+%         end
+%         if(mod(num,5) == 0)
 %             imshow(u); hold on
 %             drawnow;
 %         end
