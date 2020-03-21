@@ -12,10 +12,12 @@
 % 2019.9.5
 clear all
 
-image = imread('../../cameraman.png');
+image = imread('../../brain.jpg');
+image = rgb2gray(image);
 image = double(image);
 I = (image - min(image(:)))./(max(image(:)) - min(image(:)));
-load('../../cameraman_noisy.mat') %For noisy image input
+%load('../../cameraman_noisy.mat') %For noisy image input
+I = imresize(I,[512 512]);
 [m,n] = size(I);
 
 %Initial level set
@@ -31,12 +33,12 @@ for i = 1:n
 end
 
 %parameters
-lambda = 0.1;   %Fidelity weight
+lambda = 10;   %Fidelity weight
 dx = 1;          %Grid point distance
-tmax = 100000;
+tmax = 100;
 N = 2;           %Dimension
 g = 1;           %Regularization weight
-dumax = 0.01;
+dumax = 0.001;
 method = 1;
 %0:gradient descent
 %1:1-order
@@ -45,9 +47,9 @@ method = 1;
 
 tic
 
-for k = [1]                          %times of actual damping coefficient to theortical best damping coefficient
-for b = [0.5]                          %beta in beltrami regularization
-for method = [1]
+for k = [5]                          %times of actual damping coefficient to theortical best damping coefficient
+for b = [2]                          %beta in beltrami regularization
+for method = [2]
     
     figure
     E = zeros(tmax,1);                     %Initial potential energy function
@@ -58,8 +60,8 @@ for method = [1]
     du  =100;
     num = 1;
     
-    while  (du > dumax && ind < tmax/10)
-%    while (ind < tmax/10)
+%    while  (du > dumax && ind < tmax/10)
+    while (ind < tmax/10)
 
         %beta = getBeta(u,dx,b);
         beta = b;
@@ -72,8 +74,8 @@ for method = [1]
          grad = DxF.^2 + DyF.^2;
          dom = sqrt(1 + b.^2.*grad);
          domAvg = sum(sum(dom(:)))./m./n;
-         a = 2.*pi.*sqrt(b.*g/m/n).*sqrt(domAvg);
-%         a = k.*2.*pi.*sqrt(b.*g);     %damping coeffience
+%         a = 2.*pi.*sqrt(b.*g/m/n).*sqrt(domAvg);
+         a = k.*2.*pi.*sqrt(b.*g/m/n);     %damping coeffience
 %        a = getDamp(u,dx,b,g,m,n);
         
 %%      
@@ -98,20 +100,20 @@ for method = [1]
         end
         
  %      visualize contour
-%         if(mod(int32(ind*10),10) == 0)
-%             imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
-%             contour(u, [0.5 0.5], 'r');hold off
-%             title(sprintf('Contour at Level-Set 0 at Time = %d, beta=%d, lambda=%d', ind, b, lambda));
-% %            imshow(u); hold on
-%             drawnow;
-%         end
+        if(mod(int32(ind*10),10) == 0)
+            imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
+            contour(u, [0.5 0.5], 'r');hold off
+            title(sprintf('Contour at Level-Set 0 at Time = %d, beta=%d, lambda=%d', ind, b, lambda));
+%            imshow(u); hold on
+            drawnow;
+        end
         num = num + 1;
         du = max(abs(u(:) - u_(:)));
         
     end
     ind = 1;
     %automatically save the energy
-    name = strcat('t_hard_b =',num2str(b),',t=',num2str(tmax),',lambda=',num2str(lambda),',k=',num2str(k),'.mat');
+    name = strcat('t_hard_b =',num2str(b),',t=',num2str(tmax),',lambda=',num2str(lambda),',k=',num2str(k),'m=',num2str(method),'.mat');
     save(name,'E');
     
 

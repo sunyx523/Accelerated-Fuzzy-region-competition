@@ -18,6 +18,7 @@ image = imread('../cameraman.png');
 image = double(image);
 %I = (image - min(image(:)))./(max(image(:)) - min(image(:)));
 load('../cameraman_noisy.mat') %For noisy image input
+I = imresize(I,[1024 1024]);
 [m,n] = size(I);
 
 %Initial level set
@@ -38,12 +39,13 @@ py = zeros(m,n); %Initial projector(dual variable) on y dirextion
 %parameters
 lambda = 0.05;      %Fidelity weight
 dx = 1;             %Grid point distance
-tmax = 1000;      %Maximum iterations
+tmax = 100000;      %Maximum iterations
 L2 = 6;
 g = 1;
+dumax = 0.001;
 
 tic
-for b = [2]          %beta in beltrami regularization
+for b = [0.5]          %beta in beltrami regularization
     
     figure
     a = 2.*sqrt(b.*g.*(pi.^2)/m/n);
@@ -54,8 +56,11 @@ for b = [2]          %beta in beltrami regularization
     u_ = u;                %u_ for previous level set
     ind = 0;
     t1 = clock;
+    du  =100;
+    num = 1;
  
-    while (ind < tmax/10)        
+ %   while (ind < tmax/10)
+    while  (du > dumax && ind < tmax/10)
         beta = b;
         utemp = u;
         %beta = getBeta(u,dx,b);   
@@ -75,10 +80,10 @@ for b = [2]          %beta in beltrami regularization
         
 %        visualize contour
 %         if(mod(int32(ind*10),5) == 0)
-% %             imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
-% %             contour(u, [0.5 0.5], 'r');hold off
-% %             title(sprintf('Primal dual Beltrami'));
-%             imshow(u); hold on
+%             imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
+%             contour(u, [0.5 0.5], 'r');hold off
+%             title(sprintf('Primal dual Beltrami'));
+% %            imshow(u); hold on
 %             drawnow;
 %         end
         
@@ -96,12 +101,16 @@ for b = [2]          %beta in beltrami regularization
         u = max(min(u - tau.*r + tau.*(Dpx + Dpy),1),0);
         u_ = utemp;
         
+        num = num + 1;
+        du = max(abs(u(:) - u_(:)));
+        
     end
     
     %automatically save the energy
 
     name = strcat('t_pd_b =',num2str(b),',t=',num2str(tmax),',sigma=',num2str(sigma),',tau=',num2str(tau),'.mat');
     save(name,'E');
+    
 end
 toc
 
