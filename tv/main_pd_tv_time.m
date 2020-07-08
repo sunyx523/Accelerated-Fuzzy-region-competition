@@ -15,6 +15,7 @@ image = imread('../cameraman.png');
 image = double(image);
 %I = (image - min(image(:)))./(max(image(:)) - min(image(:)));
 load('../cameraman_noisy.mat') %For noisy image input
+I = imresize(I,[512 512]);
 [m,n] = size(I);
 
 %Initial level set
@@ -32,10 +33,10 @@ end
 px = zeros(m,n); %Initial projector(dual variable) on x direction
 py = zeros(m,n); %Initial projector(dual variable) on y dirextion
 
-lambda = 1;      %Fidelity weight
-dx = 1;          %Grid point distance
-tmax = 1000;     %Maximum time
-ind = 1;         %Iteration index
+lambda = 500;      %Fidelity weight
+dx = 1/m;          %Grid point distance
+tmax = 1000;       %Maximum time
+ind = 1;           %Iteration index
 dumax = 0.01;
 L2 = 6;
 
@@ -44,9 +45,10 @@ for tau = [1]
     
     figure
     a = 1;
-    sigma = sqrt(a./L2); %sigma parameter from the paper
-    tau = sqrt(1/L2/a);
+    sigma = dx*sqrt(a/L2); %sigma parameter from the paper
+    tau = dx*sqrt(1/a/L2);
     E = zeros(tmax,1);   %Initla potential energy function
+    DU = zeros(tmax,1);
 
     u = u0;               %u for level set(primal variable)
     u_ = u;               %u_ for previous level set
@@ -70,16 +72,17 @@ for tau = [1]
         %visualize the contour
         if(etime(t2,t1) > ind)
             E(int32(ind.*10 + 1)) = e;
+            DU(int32(ind.*10 + 1)) = du;
             ind = ind + 0.1;
         end
         
 %        visualize contour
-        if(mod(int32(ind*10),10) == 0)
-            imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
-            contour(u, [0.5 0.5], 'r');hold off
-            title(sprintf('Primal dual TV'));
-            drawnow;
-        end    
+%         if(mod(int32(ind*10),10) == 0)
+%             imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
+%             contour(u, [0.5 0.5], 'r');hold off
+%             title(sprintf('Primal dual TV'));
+%             drawnow;
+%         end    
 
         %update dual variable
         Px = px + sigma.*Dux;

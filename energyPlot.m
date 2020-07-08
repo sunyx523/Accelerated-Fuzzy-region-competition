@@ -7,18 +7,18 @@
 % Georgia Tech
 % 2019.9.5
 
-filename = 'bel/normalized/';%file path
+filename = 'bel/result/7.7square512/DUS/';%file path
 energyFolder = fullfile(strcat(filename));
 energyInput = dir(fullfile(energyFolder,'*.mat'));
 energyNum = length(energyInput);
 load(strcat(filename,energyInput(1).name));
-En = E;
+En = DUS;
 le= '';
 
 for i=1:energyNum;
     name = strcat(filename,energyInput(i).name);
     energy = load(name);
-    energy = energy.E;
+    energy = energy.DUS;
     En = [En energy];
     name = energyInput(i).name;
     name = name(1:length(name) - 4);
@@ -45,3 +45,5 @@ ylabel('Potential Energy');
 %legend('gradient descent','acceleration with optimal damping','acceleration with 5*optimal damping','primal dual')
 %legend('soft h=10','soft h=5','soft h=2','soft h=1','hard')
 %legend('new optimal','primal dual','old optimal*5','old optimal')
+%legend('b=0.5,lambda=1000','b=0.5,lambda=500','b=0.5,lambda=700','b=1,lambda=1000','b=1,lambda=500','b=1,lambda=700','b=2,lambda=1000','b=2,lambda=500','b=2,lambda=700')
+%legend('PDE Acceleration','primal dual')

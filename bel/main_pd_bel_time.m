@@ -1,4 +1,4 @@
-% main_pd_bel.m
+% main_pd_bel_time.m
 % Chambolle-Pock primal-dual for Beltrami regularization
 % The segmentation scheme we used here is called fuzzy region competition from:
 % Mory-Ardon, 2007, "Fuzzy Region Competition: A Convex Two-Phase Segmentation Framework"
@@ -11,14 +11,16 @@
 % Yuxin Sun
 % 1498290038@qq.com
 % Georgia Tech
-% 2019.9.5
+% 2020.4.29
 clear all
+clc
 
 image = imread('../cameraman.png');
+%image = rgb2gray(image);
 image = double(image);
-%I = (image - min(image(:)))./(max(image(:)) - min(image(:)));
-load('../cameraman_noisy.mat') %For noisy image input
-I = imresize(I,[1024 1024]);
+I = (image - min(image(:)))./(max(image(:)) - min(image(:)));
+load('../star_noisy.mat') %For noisy image input
+I = imresize(I,[512 512]);
 [m,n] = size(I);
 
 %Initial level set
@@ -26,6 +28,7 @@ u0 = zeros(m,n);
 for i = 1:n
     for j = 1:m
         if (sqrt((i - n./2).^2 + (j - m./2)^2.*n./m) - n./4) < 0
+%        if (sqrt((i - n.*7./8).^2 + (j - m./2)^2.*n./m) - m./16) < 0
             u0(j,i) = 1.0;
         else
             u0(j,i) = 0.0;
@@ -37,32 +40,49 @@ px = zeros(m,n); %Initial projector(dual variable) on x direction
 py = zeros(m,n); %Initial projector(dual variable) on y dirextion
 
 %parameters
-lambda = 0.05;      %Fidelity weight
-dx = 1;             %Grid point distance
-tmax = 100000;      %Maximum iterations
-L2 = 6;
+lambda = 500;      %Fidelity weight
+dx = 1/m;             %Grid point distance
+tmax = 10000;      %Maximum 2wguiterations
+L2 = 8;
 g = 1;
-dumax = 0.001;
+dumax = 0.01;
+demax = 1;
 
 tic
-for b = [0.5]          %beta in beltrami regularization
+for lambda = [500]
+for b = [2]          %beta in beltrami regularization
     
     figure
-    a = 2.*sqrt(b.*g.*(pi.^2)/m/n);
-    sigma = sqrt(a./L2/b); %sigma parameter from the paper
-    tau = sqrt(1/L2/a/b);
+    a = 2.*pi.*sqrt(b.*g);
+    a = 1;
+    sigma = dx*sqrt(a/L2); %sigma parameter from the paper
+    tau = dx*sqrt(1/a/L2);
     E = zeros(tmax,1);     %Initla potential energy function
+    DE = zeros(tmax,1);
+    DUM = zeros(tmax,1);
+    DUS = zeros(tmax,1);
     u = u0;                %u for level set(primal variable)
     u_ = u;                %u_ for previous level set
     ind = 0;
+    e = 0;
+    e_ = 0;
+    de = 10;
     t1 = clock;
-    du  =100;
+    dum = 0;
+    dum_ = 0;
+    ddum = 0;
+    dus = 0;
+    dus_ = 0;
+    ddus = 0;
     num = 1;
  
- %   while (ind < tmax/10)
-    while  (du > dumax && ind < tmax/10)
+    while (ind < tmax/10)
+%    while  (de > demax && ind < tmax/10)
         beta = b;
         utemp = u;
+        etemp = e;
+        dumtemp = dum;
+        dustemp = dus;
         %beta = getBeta(u,dx,b);   
         c1 = sum(sum(u.*I))/sum(sum(u));
         c2 = sum(sum((1 - u).*I))/sum(sum(1 - u));
@@ -75,17 +95,22 @@ for b = [0.5]          %beta in beltrami regularization
         
         if(etime(t2,t1) > ind)
             E(int32(ind.*10 + 1)) = e;
+            DUM(int32(ind*10 + 1)) = dum;
+            DUS(int32(ind*10 + 1)) = dus;
+            DDUM(int32(ind*10 + 1)) = ddum;
+            DDUS(int32(ind*10 + 1)) = ddus;            
+            DE(int32(ind*10 + 1)) = de;
             ind = ind + 0.1;
         end
         
 %        visualize contour
-%         if(mod(int32(ind*10),5) == 0)
-%             imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
-%             contour(u, [0.5 0.5], 'r');hold off
-%             title(sprintf('Primal dual Beltrami'));
-% %            imshow(u); hold on
-%             drawnow;
-%         end
+        if(mod(int32(ind*10),10) == 0)
+            imshow(uint8(I.*255)); colormap(gray); hold on
+            contour(u, [0.5 0.5], 'r');hold off
+            title(sprintf('Primal dual Beltrami at Time = %d, beta=%d, lambda=%d', ind, b, lambda));
+%            imshow(u); hold on
+            drawnow;
+        end
         
         %update dual variable
         Den = real(sqrt(beta.^2 - px.^2 - py.^2));
@@ -100,17 +125,30 @@ for b = [0.5]          %beta in beltrami regularization
         Dpy = (py - py([1 1:end-1],:,:))./dx;    
         u = max(min(u - tau.*r + tau.*(Dpx + Dpy),1),0);
         u_ = utemp;
+        e_ = etemp;
         
         num = num + 1;
-        du = max(abs(u(:) - u_(:)));
-        
+        dum = max(max(abs(u(:) - u_(:))));
+        dus = sum(sum(abs(u(:) - u_(:))));
+        de = abs(e - e_);
+        dus_ = dustemp;
+        dum_ = dumtemp;
+        ddum = abs(dum - dum_);
+        ddus = abs(dus - dus_);        
     end
     
     %automatically save the energy
 
-    name = strcat('t_pd_b =',num2str(b),',t=',num2str(tmax),',sigma=',num2str(sigma),',tau=',num2str(tau),'.mat');
-    save(name,'E');
+    name = strcat('square512_DUM_pd_b =',num2str(b),',t=',num2str(tmax),',lambda=',num2str(lambda),'.mat');
+    save(name,'DUM');
+    name = strcat('square512_DUS_pd_b =',num2str(b),',t=',num2str(tmax),',lambda=',num2str(lambda),'.mat');
+    save(name,'DUS');    
+    name = strcat('square512_DE_pd_b =',num2str(b),',t=',num2str(tmax),',lambda=',num2str(lambda),'.mat');
+    save(name,'DE');
+    name = strcat('square512_E_pd_b =',num2str(b),',t=',num2str(tmax),',lambda=',num2str(lambda),'.mat');
+    save(name,'E');    
     
+end
 end
 toc
 

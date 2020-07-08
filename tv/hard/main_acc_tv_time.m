@@ -12,10 +12,12 @@
 % 2019.9.5
 clear all
 
-image = imread('../../cameraman.png');
+image = imread('../../brain.jpg');
+image = rgb2gray(image);
 image = double(image);
 I = (image - min(image(:)))./(max(image(:)) - min(image(:)));
 load('../../cameraman_noisy.mat') %For noisy image input
+I = imresize(I,[512 512]);
 [m,n] = size(I);
 
 %Initial level set
@@ -30,11 +32,11 @@ for i = 1:n
     end
 end
 
-lambda = 0.5;       %Fidelity weight
+lambda = 500;       %Fidelity weight
 g = 1;            %Regularization weight
 N = 2;            %Dimension
 Q = 1./255;       %Quantization level
-dx = 1;           %Grid point distance
+dx = 1/m;           %Grid point distance
 tmax = 1000;      %Maximum time
 method = 1;
 dumax = 1;
@@ -53,10 +55,11 @@ for a = [1]    %damping coeffience
     
     figure
     E = zeros(tmax,1);            %Initla potential energy function
+    DU = zeros(tmax,1);
     u = u0;                        %u for level set(primal variable)
     u_ = u;                        %u_ for previous level set
     ind = 0;
-    du  =100;
+    du  =0.1;
     t1 = clock;
     
 %    while  (du > dumax && num < itmax)    
@@ -71,23 +74,24 @@ for a = [1]    %damping coeffience
 
         if(etime(t2,t1) > ind)
             E(int32(ind*10 + 1)) = e;
+            DU(int32(ind*10 + 1)) = du;
             ind = ind + 0.1;
         end
 %        visualize contour
-        if(mod(int32(ind*10),10) == 0)
-            imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
-            contour(u, [0.5 0.5], 'r');hold off
-            title(sprintf('Contour at Level-Set 0 at Time = %d ,a=%d, lambda=%d', ind, a, lambda));
-            drawnow;
-        end
-
+%         if(mod(int32(ind*10),10) == 0)
+%             imshow(uint8(I.*(max(image(:)) - min(image(:))) + min(image(:)))); colormap(gray); hold on
+%             contour(u, [0.5 0.5], 'r');hold off
+%             title(sprintf('Contour at Level-Set 0 at Time = %d ,a=%d, lambda=%d', ind, a, lambda));
+%             drawnow;
+%         end
+        du = max(abs(u(:) - u_(:)));
     end
     
     %automatically save the energy
     ind = 1;
     name = strcat('qua_Q =',num2str(1./Q),',i=',num2str(tmax),',a=',num2str(a),',method=',num2str(method),'.mat');
     save(name,'E');
-    du = max(abs(u(:) - u_(:)));
+
     
 end
 end

@@ -13,6 +13,10 @@ function [u,dt] = getU(u,u_,I,method,a,z,lambda,dx,beta,dE,g)
         case 1
             dt = sqrt(4/z + (a/z)^2) + a/z;
             u = max(min(u + (u - u_)/(1 + a*dt) - dt^2*dE/(1 + a*dt),1),0);
+            u(1,:) = 0;
+            u(:,1) = 0;
+            u(size(u,1),:) = 0;
+            u(:,size(u,2)) = 0;
         case 2
             dt = 2/sqrt(z);
             u = max(min(u + (2 - a*dt)*(u - u_)/(2 + a*dt) - 2*dt^2*dE/(2 + a*dt),1),0);
